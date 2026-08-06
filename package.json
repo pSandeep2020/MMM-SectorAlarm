@@ -1,1 +1,9 @@
-
+{
+  "name": "MMM-SectorAlarm",
+  "version": "1.0.0",
+  "description": "Sector Alarm module for MagicMirror",
+  "main": "MMM-SectorAlarm.js",
+  "dependencies": {
+    "sectoralarm": "^2.1.2"
+  }
+}
