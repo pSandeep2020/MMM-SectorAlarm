@@ -1,1 +1,17 @@
+.sector-header {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 10px;
+}
 
+.sector-status {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.sector-temp {
+    font-size: 16px;
+    color: #cccccc;
+    padding: 2px 0;
+}
