@@ -8,12 +8,10 @@ Module.register("MMM-SectorAlarm", {
     },
 
     start() {
+        console.log("MMM-SectorAlarm started");
 
         this.loaded = false;
-
-        this.alarmStatus = "";
-        this.lastUser = "";
-        this.lastTime = "";
+        this.alarmStatus = "Loading...";
         this.temperatures = [];
 
         this.sendSocketNotification("INIT", this.config);
@@ -25,6 +23,8 @@ Module.register("MMM-SectorAlarm", {
 
     socketNotificationReceived(notification, payload) {
 
+        console.log("MMM-SectorAlarm notification:", notification);
+
         if (notification === "SECTOR_DATA") {
 
             this.loaded = true;
@@ -32,7 +32,17 @@ Module.register("MMM-SectorAlarm", {
             this.alarmStatus = payload.alarmStatus;
             this.lastUser = payload.lastUser;
             this.lastTime = payload.lastTime;
-            this.temperatures = payload.temperatures;
+            this.temperatures = payload.temperatures || [];
+
+            this.updateDom();
+        }
+
+        if (notification === "SECTOR_ERROR") {
+
+            console.error("Sector Alarm Error:", payload);
+
+            this.loaded = true;
+            this.alarmStatus = payload;
 
             this.updateDom();
         }
@@ -47,31 +57,37 @@ Module.register("MMM-SectorAlarm", {
             return wrapper;
         }
 
-        const header = document.createElement("div");
-        header.className = "sector-title";
-        header.innerHTML = "🏠 Sector Alarm";
-        wrapper.appendChild(header);
+        const title = document.createElement("div");
+        title.className = "sector-title";
+        title.innerHTML = "🏠 Sector Alarm";
+
+        wrapper.appendChild(title);
 
         const status = document.createElement("div");
         status.className = "sector-status";
-        status.innerHTML =
-            `${this.getIcon()} ${this.alarmStatus}`;
+        status.innerHTML = `${this.getStatusIcon()} ${this.alarmStatus}`;
+
         wrapper.appendChild(status);
 
-        const last = document.createElement("div");
-        last.className = "sector-last";
-        last.innerHTML =
-            `${this.lastUser}<br>${this.lastTime}`;
-        wrapper.appendChild(last);
+        if (this.lastUser) {
 
-        this.temperatures.forEach(temp => {
+            const last = document.createElement("div");
+            last.className = "sector-last";
+            last.innerHTML = `
+                ${this.lastUser}<br>
+                ${this.lastTime}
+            `;
+
+            wrapper.appendChild(last);
+        }
+
+        this.temperatures.forEach(sensor => {
 
             const row = document.createElement("div");
 
-            row.className = "sector-temp";
-
+            row.className = "sector-temperature";
             row.innerHTML =
-                `🌡 ${temp.name}: ${temp.temperature}°C`;
+                `🌡 ${sensor.name}: ${sensor.temperature}°C`;
 
             wrapper.appendChild(row);
         });
@@ -79,7 +95,7 @@ Module.register("MMM-SectorAlarm", {
         return wrapper;
     },
 
-    getIcon() {
+    getStatusIcon() {
 
         switch (this.alarmStatus) {
 
