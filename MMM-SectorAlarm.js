@@ -1,74 +1,87 @@
 Module.register("MMM-SectorAlarm", {
 
     defaults: {
-        updateInterval: 300000 // 5 minutes
+        email: "",
+        password: "",
+        siteId: "",
+        updateInterval: 300000
     },
 
-    start: function () {
-        this.status = "Loading...";
-        this.temperature = [];
-        this.lastUpdate = null;
+    start() {
 
-        this.sendSocketNotification("SECTORALARM_INIT", this.config);
+        this.loaded = false;
 
-        setInterval(() => {
-            this.sendSocketNotification("SECTORALARM_UPDATE");
-        }, this.config.updateInterval);
+        this.alarmStatus = "";
+        this.lastUser = "";
+        this.lastTime = "";
+        this.temperatures = [];
+
+        this.sendSocketNotification("INIT", this.config);
     },
 
-    socketNotificationReceived: function (notification, payload) {
+    getStyles() {
+        return ["MMM-SectorAlarm.css"];
+    },
 
-        if (notification === "SECTORALARM_DATA") {
-            this.status = payload.status;
-            this.temperature = payload.temperatures;
-            this.lastUpdate = new Date();
+    socketNotificationReceived(notification, payload) {
 
-            this.updateDom(1000);
-        }
+        if (notification === "SECTOR_DATA") {
 
-        if (notification === "SECTORALARM_ERROR") {
-            this.status = "ERROR";
-            console.error(payload);
+            this.loaded = true;
+
+            this.alarmStatus = payload.alarmStatus;
+            this.lastUser = payload.lastUser;
+            this.lastTime = payload.lastTime;
+            this.temperatures = payload.temperatures;
+
             this.updateDom();
         }
     },
 
-    getStyles: function () {
-        return ["MMM-SectorAlarm.css"];
-    },
-
-    getDom: function () {
+    getDom() {
 
         const wrapper = document.createElement("div");
 
-        wrapper.innerHTML = `
-            <div class="sector-header">
-                Sector Alarm
-            </div>
-            <div class="sector-status">
-                ${this.getAlarmIcon()} ${this.status}
-            </div>
-        `;
-
-        if (this.temperature.length > 0) {
-            this.temperature.forEach(sensor => {
-
-                const row = document.createElement("div");
-                row.className = "sector-temp";
-
-                row.innerHTML =
-                    `🌡 ${sensor.name}: ${sensor.temperature}°C`;
-
-                wrapper.appendChild(row);
-            });
+        if (!this.loaded) {
+            wrapper.innerHTML = "Loading Sector Alarm...";
+            return wrapper;
         }
+
+        const header = document.createElement("div");
+        header.className = "sector-title";
+        header.innerHTML = "🏠 Sector Alarm";
+        wrapper.appendChild(header);
+
+        const status = document.createElement("div");
+        status.className = "sector-status";
+        status.innerHTML =
+            `${this.getIcon()} ${this.alarmStatus}`;
+        wrapper.appendChild(status);
+
+        const last = document.createElement("div");
+        last.className = "sector-last";
+        last.innerHTML =
+            `${this.lastUser}<br>${this.lastTime}`;
+        wrapper.appendChild(last);
+
+        this.temperatures.forEach(temp => {
+
+            const row = document.createElement("div");
+
+            row.className = "sector-temp";
+
+            row.innerHTML =
+                `🌡 ${temp.name}: ${temp.temperature}°C`;
+
+            wrapper.appendChild(row);
+        });
 
         return wrapper;
     },
 
-    getAlarmIcon: function () {
+    getIcon() {
 
-        switch (this.status) {
+        switch (this.alarmStatus) {
 
             case "armed":
                 return "🔒";
