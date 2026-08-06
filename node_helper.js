@@ -4,6 +4,9 @@ const sectoralarm = require("sectoralarm");
 module.exports = NodeHelper.create({
 
     start() {
+
+        console.log("MMM-SectorAlarm helper started");
+
         this.site = null;
         this.configData = null;
     },
@@ -11,19 +14,29 @@ module.exports = NodeHelper.create({
     socketNotificationReceived(notification, payload) {
 
         if (notification === "INIT") {
+
+            console.log("Received INIT from frontend");
+
             this.configData = payload;
+
             this.initialize();
         }
     },
 
     async initialize() {
+
         try {
+
+            console.log("Connecting to Sector Alarm...");
+            console.log("Site ID:", this.configData.siteId);
 
             this.site = await sectoralarm.connect(
                 this.configData.email,
                 this.configData.password,
                 this.configData.siteId
             );
+
+            console.log("Sector Alarm login successful");
 
             await this.updateData();
 
@@ -33,46 +46,75 @@ module.exports = NodeHelper.create({
 
         } catch (error) {
 
+            console.error("Sector Alarm LOGIN ERROR:");
+            console.error(error);
+
             this.sendSocketNotification(
                 "SECTOR_ERROR",
-                error.message
+                error.message || JSON.stringify(error)
             );
         }
     },
 
     async updateData() {
 
+        if (!this.site) {
+            return;
+        }
+
         try {
 
-            const status = await this.site.status();
+            console.log("Fetching Sector Alarm status...");
+
+            const status =
+                await this.site.status();
+
+            console.log("Status:", status);
 
             let temperatures = [];
-            let history = [];
 
             try {
-                temperatures = await this.site.temperatures();
-            } catch (e) {}
 
-            try {
-                history = await this.site.history();
-            } catch (e) {}
+                temperatures =
+                    await this.site.temperatures();
+
+                console.log(
+                    "Temperature sensors:",
+                    temperatures.length
+                );
+
+            } catch (tempError) {
+
+                console.error(
+                    "Temperature Error:",
+                    tempError
+                );
+            }
 
             this.sendSocketNotification(
                 "SECTOR_DATA",
                 {
-                    alarmStatus: status.armedStatus,
-                    lastUser: status.lastInteractionBy,
-                    lastTime: status.lastInteractionTime,
-                    temperatures,
-                    history: history.slice(0, 3)
+                    alarmStatus:
+                        status.armedStatus,
+
+                    lastUser:
+                        status.lastInteractionBy,
+
+                    lastTime:
+                        status.lastInteractionTime,
+
+                    temperatures
                 }
             );
 
         } catch (error) {
 
+            console.error("STATUS ERROR:");
+            console.error(error);
+
             this.sendSocketNotification(
                 "SECTOR_ERROR",
-                error.message
+                error.message || JSON.stringify(error)
             );
         }
     }
