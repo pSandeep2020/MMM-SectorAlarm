@@ -1,7 +1,12 @@
 # MMM-Sector-Alarm
 
+# Install
+cd ~/MagicMirror/modules
+git clone <your-repo> MMM-SectorAlarm
+cd MMM-SectorAlarm
+npm install
 
-**MagicMirror config.js**
+# config.js
 {
     module: "MMM-SectorAlarm",
     position: "top_right",
