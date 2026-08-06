@@ -10,21 +10,13 @@ module.exports = NodeHelper.create({
 
     socketNotificationReceived(notification, payload) {
 
-        if (notification === "SECTORALARM_INIT") {
-
+        if (notification === "INIT") {
             this.configData = payload;
-
-            this.login();
-        }
-
-        if (notification === "SECTORALARM_UPDATE") {
-
-            this.fetchData();
+            this.initialize();
         }
     },
 
-    async login() {
-
+    async initialize() {
         try {
 
             this.site = await sectoralarm.connect(
@@ -33,44 +25,54 @@ module.exports = NodeHelper.create({
                 this.configData.siteId
             );
 
-            await this.fetchData();
+            await this.updateData();
 
-        } catch (err) {
+            setInterval(() => {
+                this.updateData();
+            }, this.configData.updateInterval);
+
+        } catch (error) {
 
             this.sendSocketNotification(
-                "SECTORALARM_ERROR",
-                err.message
+                "SECTOR_ERROR",
+                error.message
             );
         }
     },
 
-    async fetchData() {
-
-        if (!this.site) {
-            return;
-        }
+    async updateData() {
 
         try {
 
-            const statusData =
-                await this.site.status();
+            const status = await this.site.status();
 
-            const temperatures =
-                await this.site.temperatures();
+            let temperatures = [];
+            let history = [];
+
+            try {
+                temperatures = await this.site.temperatures();
+            } catch (e) {}
+
+            try {
+                history = await this.site.history();
+            } catch (e) {}
 
             this.sendSocketNotification(
-                "SECTORALARM_DATA",
+                "SECTOR_DATA",
                 {
-                    status: statusData.armedStatus,
-                    temperatures: temperatures
+                    alarmStatus: status.armedStatus,
+                    lastUser: status.lastInteractionBy,
+                    lastTime: status.lastInteractionTime,
+                    temperatures,
+                    history: history.slice(0, 3)
                 }
             );
 
-        } catch (err) {
+        } catch (error) {
 
             this.sendSocketNotification(
-                "SECTORALARM_ERROR",
-                err.message
+                "SECTOR_ERROR",
+                error.message
             );
         }
     }
