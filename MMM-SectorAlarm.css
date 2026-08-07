@@ -1,3 +1,13 @@
+/* Main Module */
+
+.MMM-SectorAlarm {
+    text-align: left;
+    min-width: 320px;
+    max-width: 420px;
+}
+
+/* Header */
+
 .sector-title {
     font-size: 24px;
     font-weight: 600;
@@ -5,44 +15,167 @@
     margin-bottom: 10px;
 }
 
+/* Alarm Status */
+
 .sector-status {
     font-size: 30px;
     font-weight: bold;
-    color: #ffffff;
     margin-bottom: 10px;
 }
 
+.sector-armed {
+    color: #22c55e; /* Green */
+}
+
+.sector-partial {
+    color: #fbbf24; /* Amber */
+}
+
+.sector-disarmed {
+    color: #ef4444; /* Red */
+}
+
+/* Last Action */
+
 .sector-last {
     font-size: 14px;
-    color: #999;
-    margin-bottom: 15px;
+    color: #999999;
     line-height: 1.4;
+    margin-bottom: 15px;
 }
+
+/* Section Headers */
 
 .sector-section {
     font-size: 16px;
     font-weight: 600;
-    color: #ddd;
+    color: #e5e5e5;
     margin-top: 12px;
     margin-bottom: 6px;
     border-bottom: 1px solid rgba(255,255,255,0.15);
     padding-bottom: 4px;
 }
 
-.sector-temperature,
-.sector-lock,
-.sector-log {
-    font-size: 14px;
+/* Temperature */
+
+.sector-temperature {
+    font-size: 15px;
     line-height: 1.6;
-    color: #ccc;
     margin-left: 10px;
 }
 
-.sector-temperature {
-    color: #7dd3fc;
+.temp-cold {
+    color: #60a5fa; /* Blue */
 }
+
+.temp-normal {
+    color: #34d399; /* Green */
+}
+
+.temp-warm {
+    color: #fbbf24; /* Orange */
+}
+
+.temp-hot {
+    color: #ef4444; /* Red */
+}
+
+/* Humidity */
+
+.sector-humidity {
+    font-size: 15px;
+    line-height: 1.6;
+    margin-left: 10px;
+}
+
+.humidity-low {
+    color: #93c5fd;
+}
+
+.humidity-normal {
+    color: #22c55e;
+}
+
+.humidity-high {
+    color: #f59e0b;
+}
+
+.humidity-critical {
+    color: #ef4444;
+}
+
+/* Locks */
 
 .sector-lock {
-    color: #fbbf24;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-left: 10px;
 }
 
+.locked {
+    color: #22c55e;
+}
+
+.unlocked {
+    color: #ef4444;
+}
+
+/* Logs */
+
+.sector-log {
+    font-size: 13px;
+    color: #b0b0b0;
+    line-height: 1.5;
+    margin-left: 10px;
+    margin-bottom: 2px;
+    max-width: 380px;
+    word-wrap: break-word;
+}
+
+/* Sensor Cards */
+
+.sector-sensor-card {
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.05);
+}
+
+/* Generic Labels */
+
+.sector-label {
+    color: #888888;
+}
+
+.sector-value {
+    color: #ffffff;
+}
+
+/* Blink unlocked doors */
+
+@keyframes sectorWarning {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.sector-alert {
+    animation: sectorWarning 2s infinite;
+    color: #ef4444;
+}
+
+/* Optional Frosted Look */
+
+.sector-panel {
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.04);
+}
