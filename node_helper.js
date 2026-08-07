@@ -1,5 +1,7 @@
 const NodeHelper = require("node_helper");
-const sectoralarm = require("sectoralarm");
+const axios = require("axios");
+
+const API_URL = "https://mypagesapi.sectoralarm.net/api";
 
 module.exports = NodeHelper.create({
 
@@ -7,7 +9,8 @@ module.exports = NodeHelper.create({
 
         console.log("MMM-SectorAlarm helper started");
 
-        this.site = null;
+        this.authToken = null;
+        this.panelId = null;
         this.configData = null;
     },
 
@@ -27,16 +30,7 @@ module.exports = NodeHelper.create({
 
         try {
 
-            console.log("Connecting to Sector Alarm...");
-            console.log("Site ID:", this.configData.siteId);
-
-            this.site = await sectoralarm.connect(
-                this.configData.email,
-                this.configData.password,
-                this.configData.siteId
-            );
-
-            console.log("Sector Alarm login successful");
+            await this.login();
 
             await this.updateData();
 
@@ -46,7 +40,7 @@ module.exports = NodeHelper.create({
 
         } catch (error) {
 
-            console.error("Sector Alarm LOGIN ERROR:");
+            console.error("Sector Alarm initialization failed:");
             console.error(error);
 
             this.sendSocketNotification(
@@ -56,61 +50,153 @@ module.exports = NodeHelper.create({
         }
     },
 
+    async login() {
+
+        console.log("Logging into Sector Alarm API...");
+
+        const headers = {
+            "API-Version": "6",
+            "Platform": "iOS",
+            "User-Agent": "SectorAlarm/387 CFNetwork/1206 Darwin/20.1.0",
+            "Version": "2.0.27",
+            "Connection": "keep-alive",
+            "Content-Type": "application/json"
+        };
+
+        const response = await axios.post(
+            `${API_URL}/Login/Login`,
+            {
+                UserId: this.configData.email,
+                Password: this.configData.password
+            },
+            {
+                headers
+            }
+        );
+
+        this.authToken =
+            response.data.AuthorizationToken;
+
+        console.log("Sector Alarm login successful");
+
+        const fullSystem = await axios.get(
+            `${API_URL}/Panel/getFullSystem`,
+            {
+                headers: this.getHeaders()
+            }
+        );
+
+        this.panelId =
+            fullSystem.data.Panel.PanelId;
+
+        console.log(
+            "Panel ID:",
+            this.panelId
+        );
+    },
+
+    getHeaders() {
+
+        return {
+            "Authorization": this.authToken,
+            "API-Version": "6",
+            "Platform": "iOS",
+            "User-Agent": "SectorAlarm/356 CFNetwork/1152.2 Darwin/19.4.0",
+            "Version": "2.0.20",
+            "Connection": "keep-alive",
+            "Content-Type": "application/json"
+        };
+    },
+
     async updateData() {
 
-        if (!this.site) {
+        if (!this.authToken || !this.panelId) {
             return;
         }
 
         try {
 
-            console.log("Fetching Sector Alarm status...");
+            console.log(
+                "Fetching Sector Alarm data..."
+            );
 
-            const status =
-                await this.site.status();
+            const headers = this.getHeaders();
 
-            console.log("Status:", status);
+            const [
+                panelStatus,
+                temperatures,
+                lockStatus,
+                logs
+            ] = await Promise.all([
 
-            let temperatures = [];
+                axios.get(
+                    `${API_URL}/Panel/GetPanelStatus?panelId=${this.panelId}`,
+                    { headers }
+                ),
 
-            try {
+                axios.get(
+                    `${API_URL}/Panel/GetTemperatures?panelId=${this.panelId}`,
+                    { headers }
+                ),
 
-                temperatures =
-                    await this.site.temperatures();
+                axios.get(
+                    `${API_URL}/Panel/GetLockStatus?panelId=${this.panelId}`,
+                    { headers }
+                ),
 
-                console.log(
-                    "Temperature sensors:",
-                    temperatures.length
-                );
+                axios.get(
+                    `${API_URL}/Panel/GetLogs?panelId=${this.panelId}`,
+                    { headers }
+                )
+            ]);
 
-            } catch (tempError) {
-
-                console.error(
-                    "Temperature Error:",
-                    tempError
-                );
-            }
+            console.log(
+                "Alarm Status:",
+                JSON.stringify(
+                    panelStatus.data,
+                    null,
+                    2
+                )
+            );
 
             this.sendSocketNotification(
                 "SECTOR_DATA",
                 {
-                    alarmStatus:
-                        status.armedStatus,
+                    panelStatus:
+                        panelStatus.data,
 
-                    lastUser:
-                        status.lastInteractionBy,
+                    temperatures:
+                        temperatures.data,
 
-                    lastTime:
-                        status.lastInteractionTime,
+                    lockStatus:
+                        lockStatus.data,
 
-                    temperatures
+                    logs:
+                        logs.data
                 }
             );
 
         } catch (error) {
 
-            console.error("STATUS ERROR:");
-            console.error(error);
+            console.error(
+                "Sector Alarm update failed:"
+            );
+
+            if (error.response) {
+
+                console.error(
+                    "Status:",
+                    error.response.status
+                );
+
+                console.error(
+                    error.response.data
+                );
+
+            } else {
+
+                console.error(error);
+            }
 
             this.sendSocketNotification(
                 "SECTOR_ERROR",
