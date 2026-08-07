@@ -1,17 +1,48 @@
-.sector-header {
+.sector-title {
     font-size: 24px;
-    font-weight: bold;
+    font-weight: 600;
     color: #ffffff;
     margin-bottom: 10px;
 }
 
 .sector-status {
-    font-size: 20px;
+    font-size: 30px;
+    font-weight: bold;
+    color: #ffffff;
     margin-bottom: 10px;
 }
 
-.sector-temp {
-    font-size: 16px;
-    color: #cccccc;
-    padding: 2px 0;
+.sector-last {
+    font-size: 14px;
+    color: #999;
+    margin-bottom: 15px;
+    line-height: 1.4;
 }
+
+.sector-section {
+    font-size: 16px;
+    font-weight: 600;
+    color: #ddd;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    padding-bottom: 4px;
+}
+
+.sector-temperature,
+.sector-lock,
+.sector-log {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #ccc;
+    margin-left: 10px;
+}
+
+.sector-temperature {
+    color: #7dd3fc;
+}
+
+.sector-lock {
+    color: #fbbf24;
+}
+
